@@ -1,0 +1,79 @@
+unit SPI;
+
+procedure SPI_Init_();
+procedure SPI_Write_Byte_(data_: byte);
+function SPI_Read_Reg_(reg: byte): byte;
+procedure SPI_Write_Reg_(reg: byte; dat: byte);
+procedure SPI_Read_Reg_Multi_(reg: byte; data_ptr: ^byte; data_size: byte);
+procedure SPI_Write_Reg_Multi_(reg: byte; data_prt: ^byte; data_size: byte);
+
+implementation
+
+var Chip_Select: sbit at RA4_bit;
+    Chip_Select_Direction: sbit at TRISA4_bit;
+
+procedure SPI_Init_();
+begin
+     //ADCON1 := 0x0F;                          // Turn off ADC
+     ADCON0.ADON := 0;
+     ANSELA := 0x00;
+     //CMCON := 0x07;                           // Turn off Comparator
+     CM1CON1.C1ON := 0;
+     
+     Chip_Select := 1;                          // Deselect module
+     Chip_Select_Direction := 0;                // Set CS# pin as Output
+     SPI1_init();
+end;
+
+procedure SPI_Write_Byte_(data_: byte);
+begin
+     Chip_Select := 0;
+     SPI1_Write(data_);
+     Chip_Select := 1;
+end;
+
+function SPI_Read_Reg_(reg: byte): byte;
+begin
+     Chip_Select := 0;
+     SPI1_Write(reg);
+     result := SPI1_Read(reg);
+     Chip_Select := 1;
+end;
+
+procedure SPI_Write_Reg_(reg: byte; data_: byte);
+begin
+     Chip_Select := 0;
+     SPI1_Write(reg);
+     SPI1_Write(data_);
+     Chip_Select := 1;
+end;
+
+procedure SPI_Read_Reg_Multi_(reg: byte; data_ptr: ^byte; data_size: byte);
+var i: byte;
+var ptr: ^byte;
+begin
+     Chip_Select := 0;
+     SPI1_Write(reg);
+     for i := 0 to (data_size - 1) do
+         begin
+              ptr := data_ptr + i;
+              ptr^ := SPI1_Read(data_size);
+         end;
+     Chip_Select := 1;
+end;
+
+procedure SPI_Write_Reg_Multi_(reg: byte; data_ptr: ^byte; data_size: byte);
+var i: byte;
+var ptr: ^byte;
+begin
+     Chip_Select := 0;
+     SPI1_Write(reg);
+     for i := 0 to (data_size - 1) do
+         begin
+              ptr := data_ptr + i;
+              SPI1_Write(ptr^);
+         end;
+     Chip_Select := 1;
+end;
+
+end.

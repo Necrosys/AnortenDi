@@ -1,0 +1,101 @@
+program AD;
+
+uses A7105;
+
+const AFHDS2A_regs: array[0..49] of byte = (
+    0xff, 0x62, 0x00, 0x25, 0x00, 0xff, 0xff, 0x00,
+    0x00, 0x00, 0x00, 0x19, 0x03, 0x05, 0x00, 0x50,
+    0x9e, 0x4b, 0x00, 0x02, 0x16, 0x2b, 0x12, 0x4f,
+    0x62, 0x80, 0xff, 0xff, 0x2a, 0x32, 0xc3, 0x1f,
+    0x1e, 0xff, 0x00, 0xff, 0x00, 0x00, 0x3b, 0x00,
+    0x17, 0x47, 0x80, 0x03, 0x01, 0x45, 0x18, 0x00,
+    0x01, 0x0f
+);
+var regs: array[0..49] of byte;
+
+const AFHDS2A_id: array[0..3] of byte = (0x54, 0x75, 0xc5, 0x2a);
+var id: array[0..3] of byte;
+
+var A7105_id: array[0..3] of byte;
+
+var AFHDS2A_packet: array[0..37] of byte;
+var AFHDS2A_packet_size: byte;
+
+var mode_reg: byte;
+var i: byte;
+
+var AFHDS2A_channel: byte;
+const AFHDS2A_max_channel: byte = 168;
+
+var detected: byte;
+var detected_AFHDS2A_channel: byte;
+var detected_AFHDS2A_packet: array[0..37] of byte;
+
+begin
+     RA5PPS := 0x19; // RA5 SDO
+     TRISA5_bit := 0; // RA5 output
+     
+     RA0_bit := 1;  // RA0 LED
+     TRISA0_bit := 0; // RA0 output
+     
+     delay_Ms(10);
+
+     id := AFHDS2A_id;
+     A7105_Init(id);
+     
+     regs := AFHDS2A_regs;
+     A7105_Config(@regs, sizeof(regs));
+     
+     AFHDS2A_channel := 0;
+     A7105_Write_Reg(A7105_0F_CHANNEL, AFHDS2A_channel);
+     
+     A7105_Strobe(A7105_RX);
+     
+     AFHDS2A_packet_size := sizeof(AFHDS2A_packet);
+     detected := 0;
+     
+     while TRUE do
+     begin
+          if (detected = 1) then
+             begin
+                  for i := 0 to AFHDS2A_max_channel do
+                  begin
+                       A7105_Write_Reg(A7105_0F_CHANNEL, i);
+                       A7105_Strobe(A7105_Standby);
+                       A7105_Write_FIFO(@detected_AFHDS2A_packet, AFHDS2A_packet_size);
+                       A7105_Strobe(A7105_TX);
+                  end;
+                  RA0_bit := not RA0_bit;
+             end;
+
+          mode_reg := A7105_Read_Reg(A7105_00_MODE);
+          if ((mode_reg and (A7105_MODE_CRCF or A7105_MODE_TRER)) = 0) then
+             begin
+                  A7105_Read_FIFO(@AFHDS2A_packet, AFHDS2A_packet_size);
+                  if (AFHDS2A_packet[0] = 0x58) then
+                     begin
+                          detected := 1;
+                          detected_AFHDS2A_channel := AFHDS2A_channel;
+                          detected_AFHDS2A_packet := AFHDS2A_packet;
+
+                          for i := 9 to (AFHDS2A_packet_size - 2) do
+                              begin
+                                   detected_AFHDS2A_packet[i] := 0x04;
+                              end;
+
+                          //EEPROM_Write(0, detected_AFHDS2A_channel);
+
+                          //for i := 0 to (AFHDS2A_packet_size - 1) do
+                          //    begin
+                          //         EEPROM_Write(i+1, detected_AFHDS2A_packet[i]);
+                          //         delay_Ms(100);
+                          //         RA0_bit := not RA0_bit;
+                          //    end;
+                     end;
+             end;
+             
+             AFHDS2A_channel := AFHDS2A_channel + 1;
+             A7105_Write_Reg(A7105_0F_CHANNEL, AFHDS2A_channel);
+             A7105_Strobe(A7105_RX);
+     end;
+end.

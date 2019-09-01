@@ -1,0 +1,205 @@
+unit A7105;
+
+uses SPI;
+
+const
+    A7105_SLEEP: byte = 0x80;
+    A7105_IDLE: byte = 0x90;
+    A7105_STANDBY: byte = 0xA0;
+    A7105_PLL: byte = 0xB0;
+    A7105_RX: byte = 0xC0;
+    A7105_TX: byte = 0xD0;
+    A7105_RST_WRPTR: byte = 0xE0;
+    A7105_RST_RDPTR: byte = 0xF0;
+
+    A7105_00_MODE: byte = 0x00;
+    A7105_01_MODE_CONTROL: byte = 0x01;
+    A7105_02_CALC: byte = 0x02;
+    A7105_03_FIFOI: byte = 0x03;
+    A7105_04_FIFOII: byte = 0x04;
+    A7105_05_FIFO_DATA: byte = 0x05;
+    A7105_06_ID_DATA: byte = 0x06;
+    A7105_07_RC_OSC_I: byte = 0x07;
+    A7105_08_RC_OSC_II: byte = 0x08;
+    A7105_09_RC_OSC_III: byte = 0x09;
+    A7105_0A_CK0_PIN: byte = 0x0A;
+    A7105_0B_GPIO1_PIN_I: byte = 0x0B;
+    A7105_0C_GPIO2_PIN_II: byte = 0x0C;
+    A7105_0D_CLOCK: byte = 0x0D;
+    A7105_0E_DATA_RATE: byte = 0x0E;
+    A7105_0F_PLL_I: byte = 0x0F;
+    A7105_0F_CHANNEL: byte = 0x0F;
+    A7105_10_PLL_II: byte = 0x10;
+    A7105_11_PLL_III: byte = 0x11;
+    A7105_12_PLL_IV: byte = 0x12;
+    A7105_13_PLL_V: byte = 0x13;
+    A7105_14_TX_I: byte = 0x14;
+    A7105_15_TX_II: byte = 0x15;
+    A7105_16_DELAY_I: byte = 0x16;
+    A7105_17_DELAY_II: byte = 0x17;
+    A7105_18_RX: byte = 0x18;
+    A7105_19_RX_GAIN_I: byte = 0x19;
+    A7105_1A_RX_GAIN_II: byte = 0x1A;
+    A7105_1B_RX_GAIN_III: byte = 0x1B;
+    A7105_1C_RX_GAIN_IV: byte = 0x1C;
+    A7105_1D_RSSI_THOLD: byte = 0x1D;
+    A7105_1E_ADC: byte = 0x1E;
+    A7105_1F_CODE_I: byte = 0x1F;
+    A7105_20_CODE_II: byte = 0x20;
+    A7105_21_CODE_III: byte = 0x21;
+    A7105_22_IF_CALIB_I: byte = 0x22;
+    A7105_23_IF_CALIB_II: byte = 0x23;
+    A7105_24_VCO_CURCAL: byte = 0x24;
+    A7105_25_VCO_SBCAL_I: byte = 0x25;
+    A7105_26_VCO_SBCAL_II: byte = 0x26;
+    A7105_27_BATTERY_DET: byte = 0x27;
+    A7105_28_TX_TEST: byte = 0x28;
+    A7105_29_RX_DEM_TEST_I: byte = 0x29;
+    A7105_2A_RX_DEM_TEST_II: byte = 0x2A;
+    A7105_2B_CPC: byte = 0x2B;
+    A7105_2C_XTAL_TEST: byte = 0x2C;
+    A7105_2D_PLL_TEST: byte = 0x2D;
+    A7105_2E_VCO_TEST_I: byte = 0x2E;
+    A7105_2F_VCO_TEST_II: byte = 0x2F;
+    A7105_30_IFAT: byte = 0x30;
+    A7105_31_RSCALE: byte = 0x31;
+    A7105_32_FILTER_TEST: byte = 0x32;
+    
+    A7105_MODE_FECF: byte = 0x40;
+    A7105_MODE_CRCF: byte = 0x20;
+    A7015_MODE_CER: byte = 0x10;
+    A7105_MODE_XER: byte = 0x08;
+    A7105_MODE_PLLER: byte = 0x04;
+    A7105_MODE_TRSR: byte = 0x02;
+    A7105_MODE_TRER: byte = 0x01;
+
+procedure A7105_Init(var id: array[0..3] of byte);
+procedure A7105_Config(regs_ptr: ^byte; regs_size: byte);
+procedure A7105_SoftReset;
+function A7105_Read_Reg(reg: byte): byte;
+procedure A7105_Write_Reg(reg: byte; data_: byte);
+procedure A7105_Strobe(data_: byte);
+function A7105_ReadID(dummy: byte): array[0..3] of byte;
+procedure A7105_WriteID(var id: array[0..3] of byte);
+procedure A7105_Read_FIFO(data_ptr: ^byte; data_size: byte);
+procedure A7105_Write_FIFO(data_ptr: ^byte; data_size: byte);
+
+implementation
+
+procedure A7105_Init(var id: array[0..3] of byte);
+begin
+     SPI_Init_();
+     A7105_SoftReset();
+     A7105_WriteID(id);
+end;
+
+procedure A7105_Config(regs_ptr: ^byte; regs_size: byte);
+var i: byte;
+var ptr: ^byte;
+begin
+     for i := 0 to (regs_size - 1) do
+         begin
+              ptr := regs_ptr + i;
+              if ptr^ <> 0xFF then
+                 begin
+                        A7105_Write_Reg(i, ptr^);
+                        delay_Ms(3);
+                 end;
+         end;
+
+      A7105_Strobe(A7105_STANDBY);
+      delay_Ms(3);
+      A7105_Write_Reg(A7105_02_CALC, 0x01);
+      delay_Ms(3);
+      
+      while (A7105_Read_Reg(A7105_02_CALC) <> 0) do
+            begin
+            end;
+
+      A7105_Read_Reg(A7105_22_IF_CALIB_I);
+      delay_Ms(3);
+      
+      A7105_Write_Reg(A7105_24_VCO_CURCAL, 0x13);
+      delay_Ms(3);
+      A7105_Write_Reg(A7105_26_VCO_SBCAL_II, 0x3b);
+      delay_Ms(3);
+      A7105_Write_Reg(A7105_0F_CHANNEL, 0x0);
+      delay_Ms(3);
+      A7105_Write_Reg(A7105_02_CALC, 0x02);
+      delay_Ms(3);
+      
+      while (A7105_Read_Reg(A7105_02_CALC) <> 0) do
+            begin
+            end;
+
+      A7105_Write_Reg(A7105_0F_CHANNEL, 0xa0);
+      delay_Ms(3);
+      A7105_Write_Reg(A7105_02_CALC, 0x02);
+
+      while (A7105_Read_Reg(A7105_02_CALC) <> 0) do
+            begin
+            end;
+
+      A7105_Write_Reg(A7105_26_VCO_SBCAL_II, 0x0a);
+      delay_Ms(3);
+      //A7105_Write_Reg(A7105_28_TX_TEST, 0x1f);
+      //delay_Ms(3);
+      A7105_Strobe(A7105_STANDBY);
+      delay_Ms(3);
+end;
+
+procedure A7105_SoftReset;
+begin
+     SPI_Write_Reg_(A7105_00_MODE, 0x00);
+     delay_Ms(3);
+end;
+
+function A7105_Read_Reg(reg: byte): byte;
+begin
+     result := SPI_Read_Reg_(reg or 0x40);
+     delay_Ms(3);
+end;
+
+procedure A7105_Write_Reg(reg: byte; data_: byte);
+begin
+     SPI_Write_Reg_(reg, data_);
+     delay_Ms(3);
+end;
+
+procedure A7105_Strobe(data_: byte);
+begin
+     SPI_Write_Byte_(data_);
+     delay_Ms(3);
+end;
+
+function A7105_ReadID(dummy: byte): array[0..3] of byte;
+var id: array[0..3] of byte;
+begin
+     SPI_Read_Reg_Multi_(A7105_06_ID_DATA or 0x40, @id, sizeof(id));
+     delay_Ms(3);
+     result := id;
+end;
+
+procedure A7105_WriteID(var id: array[0..3] of byte);
+begin
+     SPI_Write_Reg_Multi_(A7105_06_ID_DATA, @id, sizeof(id));
+     delay_Ms(3);
+end;
+
+procedure A7105_Read_FIFO(data_ptr: ^byte; data_size: byte);
+begin
+     A7105_Strobe(A7105_RST_RDPTR);
+     delay_Ms(3);
+     SPI_Read_Reg_Multi_(A7105_05_FIFO_DATA or 0x40, data_ptr, data_size);
+     delay_Ms(3);
+end;
+
+procedure A7105_Write_FIFO(data_ptr: ^byte; data_size: byte);
+begin
+     A7105_Strobe(A7105_RST_WRPTR);
+     delay_Ms(3);
+     SPI_Write_Reg_Multi_(A7105_05_FIFO_DATA, data_ptr, data_size);
+     delay_Ms(3);
+end;
+
+end.
