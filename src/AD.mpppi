@@ -22,7 +22,8 @@ IVT_BASE=00000008
 File0=AD.mpas
 File1=A7105.mpas
 File2=SPI.mpas
-Count=3
+File3=PIC16F18313.mpas
+Count=4
 [BINARIES]
 Count=0
 [IMAGES]
@@ -32,7 +33,8 @@ ActiveImageIndex=-1
 File0=A7105.mpas
 File1=AD.mpas
 File2=SPI.mpas
-Count=3
+File3=PIC16F18313.mpas
+Count=4
 [EEPROM]
 Count=0
 [ACTIVE_COMMENTS_FILES]
@@ -57,7 +59,7 @@ Count=2
 65=EEPROM
 114=MemManager
 250=SPI_Remappable
-Count=6
+Count=5
 [PROGRAMMER_TYPE]
 Value=mikroE mikroProg
 [CODEGRIP_OPTIONS]

@@ -5,21 +5,15 @@ procedure SPI_Write_Byte_(data_: byte);
 function SPI_Read_Reg_(reg: byte): byte;
 procedure SPI_Write_Reg_(reg: byte; dat: byte);
 procedure SPI_Read_Reg_Multi_(reg: byte; data_ptr: ^byte; data_size: byte);
-procedure SPI_Write_Reg_Multi_(reg: byte; data_prt: ^byte; data_size: byte);
+procedure SPI_Write_Reg_Multi_(reg: byte; data_ptr: ^byte; data_size: byte);
 
 implementation
 
-var Chip_Select: sbit at RA4_bit;
-    Chip_Select_Direction: sbit at TRISA4_bit;
+var Chip_Select: sbit; sfr; external;
+    Chip_Select_Direction: sbit; sfr; external;
 
 procedure SPI_Init_();
 begin
-     //ADCON1 := 0x0F;                          // Turn off ADC
-     ADCON0.ADON := 0;
-     ANSELA := 0x00;
-     //CMCON := 0x07;                           // Turn off Comparator
-     CM1CON1.C1ON := 0;
-     
      Chip_Select := 1;                          // Deselect module
      Chip_Select_Direction := 0;                // Set CS# pin as Output
      SPI1_init();

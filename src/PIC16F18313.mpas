@@ -1,0 +1,25 @@
+unit PIC16F18313;
+
+var Chip_Select: sbit at RA4_bit;
+    Chip_Select_Direction: sbit at TRISA4_bit;
+    LED: sbit at RA0_bit;
+
+procedure PIC16F18313_Init();
+
+implementation
+
+procedure PIC16F18313_Init();
+begin
+     //ADCON1 := 0x0F;       // Turn off ADC
+     ADCON0.ADON := 0;
+     ANSELA := 0x00;
+     //CMCON := 0x07;        // Turn off Comparator
+     CM1CON1.C1ON := 0;
+     
+     RA5PPS := 0x19;         // RA5 SDO
+     TRISA5_bit := 0;        // RA5 output
+
+     LED := 1;               // RA0 LED
+     TRISA0_bit := 0;        // RA0 output
+end;
+end.
