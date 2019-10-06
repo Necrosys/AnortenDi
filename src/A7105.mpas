@@ -103,103 +103,99 @@ begin
               if ptr^ <> 0xFF then
                  begin
                         A7105_Write_Reg(i, ptr^);
-                        delay_Ms(3);
+                        delay_Ms(2);
                  end;
          end;
 
       A7105_Strobe(A7105_STANDBY);
-      delay_Ms(3);
+      delay_Ms(2);
       A7105_Write_Reg(A7105_02_CALC, 0x01);
-      delay_Ms(3);
+      delay_Ms(2);
       
       while (A7105_Read_Reg(A7105_02_CALC) <> 0) do
             begin
             end;
 
-      A7105_Read_Reg(A7105_22_IF_CALIB_I);
-      delay_Ms(3);
+      //A7105_Read_Reg(A7105_22_IF_CALIB_I);
+      //delay_Ms(2);
       
       A7105_Write_Reg(A7105_24_VCO_CURCAL, 0x13);
-      delay_Ms(3);
+      delay_Ms(2);
       A7105_Write_Reg(A7105_26_VCO_SBCAL_II, 0x3b);
-      delay_Ms(3);
+      delay_Ms(2);
       A7105_Write_Reg(A7105_0F_CHANNEL, 0x0);
-      delay_Ms(3);
+      delay_Ms(2);
       A7105_Write_Reg(A7105_02_CALC, 0x02);
-      delay_Ms(3);
+      delay_Ms(2);
       
       while (A7105_Read_Reg(A7105_02_CALC) <> 0) do
             begin
             end;
 
       A7105_Write_Reg(A7105_0F_CHANNEL, 0xa0);
-      delay_Ms(3);
+      delay_Ms(2);
       A7105_Write_Reg(A7105_02_CALC, 0x02);
 
       while (A7105_Read_Reg(A7105_02_CALC) <> 0) do
             begin
             end;
 
-      A7105_Write_Reg(A7105_26_VCO_SBCAL_II, 0x0a);
-      delay_Ms(3);
-      //A7105_Write_Reg(A7105_28_TX_TEST, 0x1f);
-      //delay_Ms(3);
+      A7105_Write_Reg(A7105_25_VCO_SBCAL_I, 0x0a);
+      delay_Ms(2);
       A7105_Strobe(A7105_STANDBY);
-      delay_Ms(3);
+      delay_Ms(2);
 end;
 
 procedure A7105_SoftReset;
 begin
      SPI_Write_Reg_(A7105_00_MODE, 0x00);
-     delay_Ms(3);
+     delay_Ms(2);
 end;
 
 function A7105_Read_Reg(reg: byte): byte;
 begin
      result := SPI_Read_Reg_(reg or 0x40);
-     delay_Ms(3);
+     delay_Ms(2);
 end;
 
 procedure A7105_Write_Reg(reg: byte; data_: byte);
 begin
      SPI_Write_Reg_(reg, data_);
-     delay_Ms(3);
+     delay_Ms(2);
 end;
 
 procedure A7105_Strobe(data_: byte);
 begin
      SPI_Write_Byte_(data_);
-     delay_Ms(3);
+     delay_Ms(2);
 end;
 
 function A7105_ReadID(dummy: byte): array[0..3] of byte;
 var id: array[0..3] of byte;
 begin
      SPI_Read_Reg_Multi_(A7105_06_ID_DATA or 0x40, @id, sizeof(id));
-     delay_Ms(3);
+     delay_Ms(2);
      result := id;
 end;
 
 procedure A7105_WriteID(var id: array[0..3] of byte);
 begin
      SPI_Write_Reg_Multi_(A7105_06_ID_DATA, @id, sizeof(id));
-     delay_Ms(3);
+     delay_Ms(2);
 end;
 
 procedure A7105_Read_FIFO(data_ptr: ^byte; data_size: byte);
 begin
      A7105_Strobe(A7105_RST_RDPTR);
-     delay_Ms(3);
      SPI_Read_Reg_Multi_(A7105_05_FIFO_DATA or 0x40, data_ptr, data_size);
-     delay_Ms(3);
+     delay_Ms(2);
 end;
 
 procedure A7105_Write_FIFO(data_ptr: ^byte; data_size: byte);
 begin
      A7105_Strobe(A7105_RST_WRPTR);
-     delay_Ms(3);
      SPI_Write_Reg_Multi_(A7105_05_FIFO_DATA, data_ptr, data_size);
-     delay_Ms(3);
+     delay_Ms(2);
 end;
 
 end.
